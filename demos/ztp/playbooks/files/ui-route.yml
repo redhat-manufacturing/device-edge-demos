@@ -1,0 +1,11 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ui-route
+spec:
+  host: ui.k8s.lcl
+  port:
+    targetPort: 1881
+  to:
+    kind: Service
+    name: ui-service

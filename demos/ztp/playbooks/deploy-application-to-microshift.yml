@@ -1,0 +1,59 @@
+---
+
+- name: deploy application to microshift
+  hosts:
+    - all
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: /tmp/kubeconfig
+      validate_certs: false
+  pre_tasks:
+    - name: slurp up kubeconfig
+      ansible.builtin.slurp:
+        path: /var/lib/microshift/resources/kubeadmin/kubeconfig
+      register: kubeconfig_raw
+      become: true
+    - name: create kubeconfig
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ (kubeconfig_raw['content'] | b64decode).replace('127.0.0.1', ansible_host) }}"
+        dest: /tmp/kubeconfig
+    - name: allow API access
+      ansible.posix.firewalld:
+        port: 6443/tcp
+        zone: public
+        state: enabled
+        immediate: true
+        permanent: true
+      become: true
+    - name: allow apps access
+      ansible.posix.firewalld:
+        port: 443/tcp
+        zone: public
+        state: enabled
+        immediate: true
+        permanent: true
+      become: true
+  tasks:
+    - name: make calls from localhost
+      delegate_to: localhost
+      block:
+        - name: create namespace
+          kubernetes.core.k8s:
+            name: process-control
+            kind: Namespace
+            state: present
+        - name: apply definitions
+          kubernetes.core.k8s:
+            namespace: process-control
+            definition: "{{ lookup('file', yaml_file) | from_yaml }}"
+          loop:
+            - files/mqtt-service.yaml
+            - files/mqtt-deployment.yaml
+            - files/simulate-deployment.yaml
+            - files/control-deployment.yaml
+            - files/ui-service.yaml
+            - files/ui-deployment.yaml
+            - files/ui-route.yaml
+          loop_control:
+            loop_var: yaml_file

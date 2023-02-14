@@ -1,0 +1,20 @@
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: mqtt-deployment
+spec:
+  selector:
+    matchLabels:
+      app: mqtt
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mqtt
+    spec:
+      containers:
+        - name: mqtt
+          image: quay.io/device-edge-workshops/process-control-mqtt:1.0.0
+          ports:
+            - containerPort: 1883
+              name: mqtt-port

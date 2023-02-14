@@ -1,0 +1,17 @@
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: control-deployment
+spec:
+  selector:
+    matchLabels:
+      app: control
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: control
+    spec:
+      containers:
+      - name: control
+        image: quay.io/device-edge-workshops/process-control-control-k8s:1.0.0

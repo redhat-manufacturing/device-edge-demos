@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulate-deployment
+spec:
+  selector:
+    matchLabels:
+      app: simulate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simulate
+    spec:
+      containers:
+        - name: simulate
+          image: quay.io/device-edge-workshops/process-control-simulate-k8s:1.0.0
