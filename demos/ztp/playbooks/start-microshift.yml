@@ -7,7 +7,7 @@
   pre_tasks:
     - name: push out pull secret
       ansible.builtin.copy:
-        content: "{{ openshift_pull_secret }}"
+        content: "{{ ocp_pull_secret }}"
         dest: /etc/crio/openshift-pull-secret
   tasks:
     - name: start microshift
