@@ -48,12 +48,12 @@
             namespace: process-control
             definition: "{{ lookup('file', yaml_file) | from_yaml }}"
           loop:
-            - files/mqtt-service.yaml
-            - files/mqtt-deployment.yaml
-            - files/simulate-deployment.yaml
-            - files/control-deployment.yaml
-            - files/ui-service.yaml
-            - files/ui-deployment.yaml
-            - files/ui-route.yaml
+            - files/mqtt-service.yml
+            - files/mqtt-deployment.yml
+            - files/simulate-deployment.yml
+            - files/control-deployment.yml
+            - files/ui-service.yml
+            - files/ui-deployment.yml
+            - files/ui-route.yml
           loop_control:
             loop_var: yaml_file
