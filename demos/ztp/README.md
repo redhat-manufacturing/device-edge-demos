@@ -58,4 +58,4 @@ In addition, `teardown-demo.yml` and `teardown-demo-alt.yml` will revserse all c
 
 ## Running the Demo
 
-Once the demo is built, add the appropriate passwords to `iso/ks.cfg` and use the `recook.sh` script to create a boot ISO. Write it to a flash drive, and then boot your edge devices from it. They should boot up, pull their image, install themselves, reboot, and call home to Controller.
+Once the demo is built, add the appropriate passwords to `iso/ks.cfg`, download the RHEL8.7 boot ISO into the `iso/` directory, and use the `recook.sh` script to create a boot ISO. Write it to a flash drive, and then boot your edge devices from it. They should boot up, pull their image, install themselves, reboot, and call home to Controller.
