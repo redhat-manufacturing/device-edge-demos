@@ -1,0 +1,10 @@
+FROM ubi9/ubi:latest
+
+RUN dnf -y install dnsmasq
+
+COPY dnsmasq.conf /etc/
+
+COPY hosts /etc/
+
+ENTRYPOINT ["/bin/sh"]
+CMD ["-c", "/usr/sbin/dnsmasq --log-facility=- --log-dhcp --log-async=0 -d"]

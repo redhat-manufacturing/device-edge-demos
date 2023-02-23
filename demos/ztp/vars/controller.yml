@@ -1,0 +1,100 @@
+---
+
+controller_execution_environments:
+  - name: Device Edge Workshops Execution Environment
+    image: quay.io/device-edge-workshops/provisioner-execution-environment:latest
+    pull: missing
+
+controller_credential_types:
+  - name: Openshift Pull Secret
+    kind: cloud
+    inputs:
+      fields:
+        - id: ocp_pull_secret
+          type: string
+          label: Openshift Pull Secret
+          secret: true
+    injectors:
+      extra_vars:
+        ocp_pull_secret: "{  { ocp_pull_secret }}"
+
+controller_credentials:
+  - name: Device Credentials
+    organization: Default
+    credential_type: Machine
+    inputs:
+      username: ansible
+      password: "{{ ansible_password }}"
+      become_password: "{{ ansible_password }}"
+  - name: Openshift Pull Secret
+    organization: Default
+    credential_type: Openshift Pull Secret
+    inputs:
+      ocp_pull_secret: "{{ ocp_pull_secret | string }}"
+
+controller_inventories:
+  - name: Edge Devices
+    organization: Default
+    variables:
+      ostree_repo_protocol: http
+      ostree_repo_host: "edge-manager.{{ base_domain }}"
+      ostree_repo_port: 8000
+      ostree_repo_path: rhde-image
+      ostree_os_name: rhel
+      ostree_ref: rhel/8/x86_64/edge
+
+controller_projects:
+  - name: Device Edge Codebase
+    organization: Default
+    scm_type: git
+    scm_branch: main
+    scm_url: https://github.com/redhat-manufacturing/device-edge-demos.git
+
+controller_templates:
+  - name: Initial Host Configuration
+    organization: Default
+    inventory: Edge Devices
+    ask_limit_on_launch: yes
+    project: Device Edge Codebase
+    playbook: demos/ztp/playbooks/initial-device-config.yml
+    execution_environment: Device Edge Workshops Execution Environment
+    credentials:
+      - Device Credentials
+  - name: Start Microshift
+    organization: Default
+    inventory: Edge Devices
+    ask_limit_on_launch: yes
+    project: Device Edge Codebase
+    playbook: demos/ztp/playbooks/start-microshift.yml
+    execution_environment: Device Edge Workshops Execution Environment
+    credentials:
+      - Device Credentials
+      - Openshift Pull Secret
+  - name: Deploy Application to Microshift
+    organization: Default
+    ask_limit_on_launch: yes
+    inventory: Edge Devices
+    project: Device Edge Codebase
+    playbook: demos/ztp/playbooks/deploy-application-to-microshift.yml
+    execution_environment: Device Edge Workshops Execution Environment
+    credentials:
+      - Device Credentials
+
+controller_workflows:
+  - name: Configure Edge Device
+    organization: Default
+    inventory: Edge Devices
+    ask_limit_on_launch: yes
+    state: present
+    allow_simultaneous: yes
+    simplified_workflow_nodes:
+      - identifier: Initial Host Configuration
+        unified_job_template: Initial Host Configuration
+        success_nodes:
+          - Start Microshift
+      - identifier: Start Microshift
+        unified_job_template: Start Microshift
+        success_nodes:
+          - Deploy Application to Microshift
+      - identifier: Deploy Application to Microshift
+        unified_job_template: Deploy Application to Microshift

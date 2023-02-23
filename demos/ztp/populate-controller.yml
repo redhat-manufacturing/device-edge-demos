@@ -1,0 +1,22 @@
+---
+
+- name: populate ansible controller
+  hosts:
+    - all
+  connection: local
+  vars:
+    controller_hostname: "{{ ansible_host }}"
+    controller_username: admin
+    controller_password: "{{ ansible_password }}"
+    controller_validate_certs: false
+    controller_configuration_credentials_secure_logging: false
+  vars_files:
+    - vars/controller.yml
+  roles:
+    - redhat_cop.controller_configuration.execution_environments
+    - redhat_cop.controller_configuration.credential_types
+    - redhat_cop.controller_configuration.credentials
+    - redhat_cop.controller_configuration.inventories
+    - redhat_cop.controller_configuration.projects
+    - redhat_cop.controller_configuration.job_templates
+    - redhat_cop.controller_configuration.workflow_job_templates

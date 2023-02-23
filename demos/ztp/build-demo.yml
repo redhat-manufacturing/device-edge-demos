@@ -1,0 +1,91 @@
+---
+
+- name: build zero touch provisioning demo
+  hosts:
+    - all
+  become: true
+  vars:
+    base_dir: "/home/{{ ansible_user }}/rhde-demo"
+    internal_address: 192.168.200.1
+    inetrnal_netmask: 24
+    dhcp_range: 192.168.200.10,192.168.200.200,1h
+  pre_tasks:
+    - name: enforce some vars are defined
+      ansible.builtin.assert:
+        that:
+          - external_connection is defined
+          - internal_connection is defined
+          - base_domain is defined
+          - internal_address is defined
+          - inetrnal_netmask is defined
+          - dhcp_range is defined
+    - name: print out demo information
+      ansible.builtin.debug:
+        msg: |-
+          external_connection: "{{ external_connection }}"
+          internal_connection: "{{ internal_connection }}"
+  tasks:
+    - name: create working directory
+      ansible.builtin.file:
+        path: "{{ base_dir }}/dnsmasq"
+        state: directory
+    - name: template out dnsmasq conf
+      ansible.builtin.template:
+        src: templates/dnsmasq.conf.j2
+        dest: "{{ base_dir }}/dnsmasq/dnsmasq.conf"
+    - name: template out hosts file
+      ansible.builtin.template:
+        src: templates/hosts.j2
+        dest: "{{ base_dir }}/dnsmasq/hosts"
+    - name: copy Dockerfile
+      ansible.builtin.copy:
+        src: files/dnsmasq-Dockerfile
+        dest: "{{ base_dir }}/dnsmasq/Dockerfile"
+    - name: build dnsmasq container
+      containers.podman.podman_image:
+        name: rhde-demo-ztp-dnsmasq
+        path: "{{ base_dir }}/dnsmasq"
+    - name: set wan link to external zone
+      community.general.nmcli:
+        conn_name: "{{ external_connection }}"
+        zone: external
+        state: present
+      notify:
+        - restart_nm
+    - name: add nm conn for demo
+      community.general.nmcli:
+        conn_name: rhde-demo-ztp
+        type: ethernet
+        ifname: "{{ internal_connection }}"
+        ip4:
+          - "{{ internal_address }}/ {{ inetrnal_netmask }}"
+        dns4:
+          - "{{ internal_address }}"
+        dns4_search:
+          - "{{ base_domain }}"
+        zone: trusted
+        state: present
+      notify:
+        - restart_nm
+    - name: flush handlers for NetworkManager
+      ansible.builtin.meta: flush_handlers
+    - name: copy pod yaml
+      ansible.builtin.copy:
+        src: files/rhde-demo-ztp-pod.yml
+        dest: "{{ base_dir }}/pod.yml"
+    - name: start pod
+      containers.podman.podman_play:
+        kube_file: "{{ base_dir }}/pod.yml"
+        state: started
+  handlers:
+    - name: restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
+        state: restarted
+      listen:
+        - restart_nm
+    - name: wait for device to come back online
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+      listen:
+        - restart_nm

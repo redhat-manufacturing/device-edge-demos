@@ -1,0 +1,18 @@
+
+interface={{ internal_connection }}
+listen-address={{ internal_address }}
+bind-interfaces
+
+port=53
+
+local=/internal.{{ base_domain }}/
+domain=internal.{{ base_domain }}
+no-hosts
+
+address=/internal.{{ base_domain }}/{{ internal_address }}
+
+dhcp-option=3,{{ internal_address }}
+dhcp-option=6,{{ internal_address }}
+dhcp-range={{ dhcp_range }}
+
+dhcp-host={{ switch_mac_address }},192.168.200.10

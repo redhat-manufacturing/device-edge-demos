@@ -1,0 +1,52 @@
+---
+
+- name: cleanup after demo
+  hosts:
+    - all
+  become: true
+  vars:
+    base_dir: "/home/{{ ansible_user }}/rhde-demo"
+  tasks:
+    - name: stop/remove the pod
+      containers.podman.podman_play:
+        kube_file: "{{ base_dir }}/pod.yml"
+        state: absent
+    - name: unset zone
+      community.general.nmcli:
+        conn_name: "{{ external_connection }}"
+        zone: '' 
+        state: present
+      notify:
+        - restart_nm
+    - name: dump NetworkManager conn
+      community.general.nmcli:
+        conn_name: rhde-demo-ztp
+        state: absent
+      notify:
+        - restart_nm
+    - name: dump images
+      containers.podman.podman_image:
+        name: "{{ image }}"
+        state: absent
+      loop:
+        - localhost/rhde-demo-ztp-dnsmasq
+        #- quay.io/device-edge-workshops/microshift-ostree-repo
+        #- registry.access.redhat.com/ubi9/ubi
+      loop_control:
+        loop_var: image
+    - name: dump directory
+      ansible.builtin.file:
+        path: "{{ base_dir }}"
+        state: absent
+  handlers:
+    - name: restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
+        state: restarted
+      listen:
+        - restart_nm
+    - name: wait for device to come back online
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+      listen:
+        - restart_nm

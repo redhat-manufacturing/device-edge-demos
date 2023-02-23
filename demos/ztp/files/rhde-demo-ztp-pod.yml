@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    io.podman.annotations.autoremove/rhde-demo-ztp: "FALSE"
+    io.podman.annotations.init/rhde-demo-ztp: "FALSE"
+    io.podman.annotations.privileged/rhde-demo-ztp: "TRUE"
+    io.podman.annotations.publish-all/rhde-demo-ztp: "FALSE"
+  labels:
+    app: rhde-demo-ztp
+  name: rhde-demo-ztp
+spec:
+  hostNetwork: true
+  containers:
+  - name: dnsmasq
+    image: rhde-demo-ztp-dnsmasq
+    securityContext:
+      privileged: true
+  - name: rpmostree-repo
+    image: quay.io/device-edge-workshops/microshift-ostree-repo:latest
