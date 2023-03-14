@@ -1,0 +1,105 @@
+---
+
+- name: copy ISOs to datastore
+  hosts:
+    - datastore
+  gather_facts: false
+  tasks:
+    - name: copy isos to datastore
+      ansible.builtin.copy:
+        src: "{{ hostvars[host]['tmpdir']['path'] }}/rhcos-live.x86_64.iso"
+        dest: "/mnt/data01/vmware-datastore/isos/{{ host }}-sno.iso"
+      loop: "{{ groups['sno_clusters'] }}"
+      loop_control:
+        loop_var: host
+
+- name: create dhcp leases
+  hosts:
+    - dhcp
+  gather_facts: false
+  tasks:
+    - name: create dhcp leases
+      ansible.builtin.lineinfile:
+        path: /etc/dnsmasq.conf
+        line: "dhcp-host={{ hostvars[host]['mac_address'] }},{{ host }},{{ hostvars[host]['ip_address'] }}"
+        insertafter: EOF
+      loop: "{{ groups['sno_clusters'] }}"
+      loop_control:
+        loop_var: host
+      notify:
+        - restart_dnsmasq
+  handlers:
+    - name: restart dnsmasq
+      ansible.builtin.systemd:
+        name: dnsmasq
+        state: restarted
+      listen:
+        - restart_dnsmasq
+
+- name: create dns entries
+  hosts:
+    - dns
+  gather_facts: false
+  tasks:
+    - name: make API calls from localhost
+      block:
+        - name: create DNS zones
+          community.general.ipa_dnszone:
+            ipa_host: "{{ inventory_hostname }}"
+            ipa_pass: "{{ ipa_password }}"
+            validate_certs: false
+            zone_name: "{{ host }}"
+            state: present
+          loop: "{{ groups['sno_clusters'] }}"
+          loop_control:
+            loop_var: host
+          failed_when: false
+        - name: create DNS records
+          community.general.ipa_dnsrecord:
+            ipa_host: "{{ inventory_hostname }}"
+            ipa_pass: "{{ ipa_password }}"
+            validate_certs: false
+            zone_name: "{{ item.1 }}"
+            record_type: 'A'
+            record_name: "{{ item.0 }}"
+            record_value: "{{ hostvars[item.1]['ip_address'] }}"
+          loop: "{{ ['*.apps', 'api', 'api-int'] | product(groups['sno_clusters']) | list }}"
+      delegate_to: localhost
+
+- name: create sno infra
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  tasks:
+    - name: create sno virtual machine
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter.hostname }}"
+        username: "{{ vcenter.username }}"
+        password: "{{ vcenter.password }}"
+        folder: /MSP Lab/vm/
+        name: "{{ inventory_hostname }}"
+        datacenter: MSP Lab
+        state: poweredon
+        guest_id: rhel8_64Guest
+        disk:
+          - size_gb: 120
+            type: thin
+            datastore: storage04-nfs-lun0
+        hardware:
+          memory_mb: 32768
+          num_cpus: 16
+          scsi: paravirtual
+        networks:
+          - name: VLAN144
+            mac: "{{ mac_address }}"
+            device_type: vmxnet3
+        cdrom:
+          - controller_number: 0
+            unit_number: 0
+            state: present
+            type: iso
+            iso_path: "[storage04-nfs-lun0] isos/{{ inventory_hostname }}-sno.iso"
+        wait_for_ip_address: true
+        wait_for_ip_address_timeout: 1200
+      delegate_to: localhost
+      register: deploy_vm

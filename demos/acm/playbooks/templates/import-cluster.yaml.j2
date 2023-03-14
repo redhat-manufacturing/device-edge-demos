@@ -1,0 +1,46 @@
+apiVersion: cluster.open-cluster-management.io/v1
+kind: ManagedCluster
+metadata:
+  name: {{ display_name }}
+  labels:
+    name: {{ display_name }}
+    cloud: auto-detect
+    vendor: auto-detect
+    cluster.open-cluster-management.io/clusterset: manufacturing-plants
+  annotations: {}
+spec:
+  hubAcceptsClient: true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auto-import-secret
+  namespace: {{ display_name }}
+stringData:
+  autoImportRetry: "2"
+  kubeconfig: "{{ kubeconfig }}"
+---
+apiVersion: agent.open-cluster-management.io/v1
+kind: KlusterletAddonConfig
+metadata:
+  name: {{ display_name }}
+  namespace: {{ display_name }}
+spec:
+  clusterName: {{ display_name }}
+  clusterNamespace: {{ display_name }}
+  clusterLabels:
+    name: {{ display_name }}
+    cloud: auto-detect
+    vendor: auto-detect
+    cluster.open-cluster-management.io/clusterset: manufacturing-plants
+  applicationManager:
+    enabled: true
+    argocdCluster: false
+  policyController:
+    enabled: true
+  searchCollector:
+    enabled: true
+  certPolicyController:
+    enabled: true
+  iamPolicyController:
+    enabled: true

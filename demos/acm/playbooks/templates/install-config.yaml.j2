@@ -1,0 +1,26 @@
+apiVersion: v1
+baseDomain: mfg-edge.lab.msp.redhat.com
+compute:
+- name: worker
+  replicas: 0 
+controlPlane:
+  name: master
+  replicas: 1 
+metadata:
+  name: {{ inventory_hostname.split('.')[0] }}
+networking:
+  networkType: OVNKubernetes
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.15.108.0/24
+  serviceNetwork:
+  - 172.30.0.0/16 
+platform:
+  none: {}
+bootstrapInPlace:
+  installationDisk: /dev/sda 
+pullSecret: '{{ pull_secret }}' 
+sshKey: |
+  {{ ssh_key }}

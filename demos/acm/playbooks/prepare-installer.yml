@@ -1,0 +1,88 @@
+---
+
+- name: install single node openshift
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  vars:
+    ocp_version: 4.12.6
+  tasks:
+    - name: tooling is local
+      block:
+        - name: create a tmpdir
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: _install_sno
+          register: _tmpdir
+          when:
+            - tmpdir is not defined
+        - name: set tmpdir fact
+          ansible.builtin.set_fact:
+            tmpdir: "{{ _tmpdir }}"
+          when:
+            - tmpdir is not defined
+        - name: download cli tooling
+          ansible.builtin.get_url:
+            url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ ocp_version }}/openshift-install-linux.tar.gz"
+            dest: "{{ tmpdir.path }}/openshift-install-linux.tar.gz"
+        - name: extract cli tooling
+          ansible.builtin.unarchive:
+            src: "{{ tmpdir.path }}/openshift-install-linux.tar.gz"
+            dest: "{{ tmpdir.path }}/"
+        - name: make oc executable
+          ansible.builtin.file:
+            path: "{{ tmpdir.path }}/openshift-install"
+            mode: '0755'
+        - name: get rhcos iso url
+          ansible.builtin.shell:
+            cmd: '{{ tmpdir.path }}/openshift-install coreos print-stream-json | grep location | grep x86_64 | grep iso | cut -d\" -f4'
+          changed_when: false
+          register: rhcos_url
+        - name: grab rhcos iso
+          ansible.builtin.get_url:
+            url: "{{ rhcos_url.stdout }}"
+            dest: "{{ tmpdir.path }}/rhcos-live.x86_64.iso"
+        - name: template out install-config
+          ansible.builtin.template:
+            src: templates/install-config.yaml.j2
+            dest: "{{ tmpdir.path }}/install-config.yaml"
+        - name: create ocp dir
+          ansible.builtin.file:
+            path: "{{ tmpdir.path }}/ocp"
+            state: directory
+        - name: copy install-config in
+          ansible.builtin.copy:
+            src: "{{ tmpdir.path }}/install-config.yaml"
+            dest: "{{ tmpdir.path }}/ocp/install-config.yaml"
+            remote_src: true
+        - name: generate assets
+          ansible.builtin.shell:
+            cmd: "./openshift-install --dir=ocp create single-node-ignition-config"
+          args:
+            chdir: "{{ tmpdir.path }}/"
+            creates: ocp/bootstrap-in-place-for-live-iso.ign
+        - name: copy ignition config
+          ansible.builtin.copy:
+            src: "{{ tmpdir.path }}/ocp/bootstrap-in-place-for-live-iso.ign"
+            dest: "{{ tmpdir.path }}/iso.ign"
+            remote_src: true
+        - name: embed ignition data
+          ansible.builtin.shell:
+            cmd: >
+              podman run
+              --privileged
+              --pull always
+              --rm
+              -v /dev:/dev
+              -v /run/udev:/run/udev
+              -v $PWD:/data
+              -w /data quay.io/coreos/coreos-installer:release
+              iso ignition embed -fi iso.ign rhcos-live.x86_64.iso
+          args:
+            chdir: "{{ tmpdir.path }}/"
+          throttle: 1
+      delegate_to: localhost
+  post_tasks:
+    - name: set tmdir facts for later playbooks
+      ansible.builtin.set_fact:
+        _tmpdir: "{{ tmpdir.path }}"
