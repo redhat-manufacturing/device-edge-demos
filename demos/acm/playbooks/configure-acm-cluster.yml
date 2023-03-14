@@ -1,0 +1,26 @@
+---
+
+- name: configure acm and cluster hosting it
+  hosts:
+    - acm_cluster
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ kubeconfig_file }}"
+  tasks:
+    - name: run API calls from localhost
+      delegate_to: localhost
+      block:
+        - name: create namespace for {{ customer }}
+          kubernetes.core.k8s:
+            definition:
+              kind: Namespace
+              apiVersion: v1
+              metadata:
+                name: "{{ customer | lower }}"
+                labels:
+                  kubernetes.io/metadata.name: "{{ customer | lower }}"
+                annotations:
+                  openshift.io/display-name: "{{ customer }}"
+
+ 
