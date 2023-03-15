@@ -109,7 +109,6 @@ metadata:
   name: ui-route
   namespace: audi
 spec:
-  host: ui-route-audi.apps.ocp.lab.msp.redhat.com
   path: /ui
   to:
     kind: Service
