@@ -102,3 +102,18 @@ spec:
         ports:
           - containerPort: 1881
             name: http-ui-port
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: ui-route
+  namespace: audi
+spec:
+  host: ui-route-audi.apps.ocp.lab.msp.redhat.com
+  path: /ui
+  to:
+    kind: Service
+    name: ui
+    weight: 100
+  port:
+    targetPort: 1881
