@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt
+spec:
+  ports:
+  - port: 1883
+    protocol: TCP
+    targetPort: 1883
+  selector:
+    app: mqtt
+  type: NodePort
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: mqtt-deployment
+spec:
+  selector:
+    matchLabels:
+      app: mqtt
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mqtt
+    spec:
+      containers:
+        - name: mqtt
+          image: quay.io/device-edge-workshops/process-control-mqtt:1.0.0
+          ports:
+            - containerPort: 1883
+              name: mqtt-port
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulate-deployment
+spec:
+  selector:
+    matchLabels:
+      app: simulate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simulate
+    spec:
+      containers:
+        - name: simulate
+          image: quay.io/device-edge-workshops/process-control-simulate-k8s:1.0.0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-deployment
+spec:
+  selector:
+    matchLabels:
+      app: control
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: control
+    spec:
+      containers:
+      - name: control
+        image: quay.io/device-edge-workshops/process-control-control-k8s:1.0.1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+spec:
+  ports:
+  - port: 1881
+    protocol: TCP
+    targetPort: 1881
+  selector:
+    app: ui
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+spec:
+  selector:
+    matchLabels:
+      app: ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+      - name: ui
+        image: quay.io/device-edge-workshops/process-control-ui-k8s:1.0.1
+        ports:
+          - containerPort: 1881
+            name: http-ui-port
