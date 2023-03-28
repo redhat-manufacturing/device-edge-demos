@@ -6,6 +6,7 @@
   pre_tasks:
     - name: handle locally
       delegate_to: localhost
+      block:
         - name: pull code to system
           ansible.builtin.git:
             repo: https://github.com/redhat-manufacturing/device-edge-demos.git
