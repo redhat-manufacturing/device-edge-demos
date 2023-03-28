@@ -1,0 +1,40 @@
+---
+
+- name: create host in controller
+  hosts:
+    - all
+  gather_facts: false
+  pre_tasks:
+    - name: get service details
+      kubernetes.core.k8s:
+        definition:
+         apiVersion: v1
+         kind: Service
+         metadata:
+           name: "{{ virtual_machine_name }}-ssh"
+           namespace: image-builder
+         spec:
+           externalTrafficPolicy: Cluster
+           ports:
+             - port: 22
+               protocol: TCP
+           selector:
+             kubevirt.io/domain: "{{ virtual_machine_name }}"
+           type: NodePort
+      register: service_details
+      check_mode: true
+    - name: get external ip address | only works on SNO, otherwise you need the node IP
+      ansible.builtin.shell:
+        cmd: getent hosts "{{ k8s_api_address }}" | awk '{print $1}'
+      register: external_ip
+      changed_when: false
+    - name: set host/port facts
+      ansible.builtin.set_fact:
+        controller_hosts:
+          - name: "{{ virtual_machine_name }}"
+            inventory: Image Builder Servers
+            variables:
+              ansible_host: "{{ external_ip.stdout }}"
+              ansible_port: "{{ service_details.result.spec.ports[0].nodePort }}"
+  roles:
+    - redhat_cop.controller_configuration.hosts
