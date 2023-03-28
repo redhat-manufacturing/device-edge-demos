@@ -1,0 +1,24 @@
+---
+
+- name: trigger job template run
+  hosts: localhost
+  gather_facts: false
+  pre_tasks:
+    - name: assert that vars are defined
+      ansible.builtin.assert:
+        that:
+          - controller_hostname is defined
+          - controller_username is defined
+          - controller_password is defined
+          - controller_validate_certs is defined
+          - job_template is defined
+    - name: set vars for role
+      ansible.builtin.set_fact:
+        controller_launch_jobs:
+          - name: "{{ job_template }}"
+            wait: true
+            timeout: 14400
+            extra_vars:
+              virtual_machine_name: "{{ virtual_machine_name | default('rhel9-vm') }}"
+  roles:
+    - redhat_cop.controller_configuration.job_launch
