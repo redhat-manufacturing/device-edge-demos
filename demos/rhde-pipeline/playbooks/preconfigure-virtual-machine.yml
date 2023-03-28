@@ -3,6 +3,14 @@
 - name: run all prep steps for image builder
   hosts:
     - all
+  gather_facts: false
+  pre_tasks:
+    - name: wait for VM to be available
+      ansible.builtin.wait_for_connection:
+        timeout: 3600
+        sleep: 10
+    - name: run the setup module
+      ansible.builtin.setup:
   tasks:
     - name: register to RHSM
       community.general.redhat_subscription:
