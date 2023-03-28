@@ -3,7 +3,9 @@ builder_compose_customizations:
     name: ansible
     description: ansible
     password: "{{ ansible_password }}"
-    groups: '["users", "wheel"]'
+    groups:
+      - users
+      - wheel
 
 builder_compose_type: edge-container
 builder_compose_pkgs:
@@ -11,4 +13,4 @@ builder_compose_pkgs:
   - git
   - nano
   - NetworkManager-wifi
-  - ansible-core"
+  - ansible-core
