@@ -1,0 +1,11 @@
+---
+
+- name: run all prep steps for image builder
+  hosts:
+    - all
+  tasks:
+    - name: register to RHSM
+      community.general.redhat_subscription:
+        state: present
+        username: "{{ rhsm_username }}"
+        password: "{{ rhsm_password }}"
