@@ -1,0 +1,7 @@
+---
+
+- name: install image builder
+  hosts:
+   - all
+  roles:
+    - infra.osbuild.builder
