@@ -1,0 +1,23 @@
+---
+
+- name: expose a virtual machine
+  hosts:
+    - all
+  gather_facts: false
+  tasks:
+    - name: create service for virtual machine
+      kubernetes.core.k8s:
+        definition:
+         apiVersion: v1
+         kind: Service
+         metadata:
+           name: "{{ virtual_machine_name }}-ssh"
+           namespace: image-builder
+         spec:
+           externalTrafficPolicy: Cluster
+           ports:
+             - port: 22
+               protocol: TCP
+           selector:
+             kubevirt.io/domain: "{{ virtual_machine_name }}"
+           type: NodePort
