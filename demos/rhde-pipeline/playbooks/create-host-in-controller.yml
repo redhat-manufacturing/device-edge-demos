@@ -33,6 +33,7 @@
         controller_hosts:
           - name: "{{ virtual_machine_name }}"
             inventory: Image Builder Servers
+            enabled: true
             variables:
               ansible_host: "{{ external_ip.stdout }}"
               ansible_port: "{{ service_details.result.spec.ports[0].nodePort }}"
