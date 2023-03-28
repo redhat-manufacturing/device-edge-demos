@@ -11,7 +11,7 @@
          apiVersion: v1
          kind: Service
          metadata:
-           name: "{{ virtual_machine_name }}-image-builder"
+           name: "{{ virtual_machine_name }}-cockpit-service"
            namespace: image-builder
          spec:
            ports:
@@ -32,7 +32,7 @@
           spec:
             to:
               kind: Service
-              name: "{{ virtual_machine_name }}-image-builder"
+              name: "{{ virtual_machine_name }}-cockpit-service"
               weight: 100
             port:
               targetPort: 9090
