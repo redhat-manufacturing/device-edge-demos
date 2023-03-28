@@ -4,15 +4,14 @@
   hosts:
     - all
   pre_tasks:
-    - name: ensure git is present
-      ansible.builtin.dnf:
-        name: git
-    - name: pull code to system
-      ansible.builtin.git:
-        repo: https://github.com/redhat-manufacturing/device-edge-demos.git
-        dest: /tmp/image-definition
-    - name: load in image definition
-      ansible.builtin.include_vars:
-        file: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
+    - name: handle locally
+      delegate_to: localhost
+        - name: pull code to system
+          ansible.builtin.git:
+            repo: https://github.com/redhat-manufacturing/device-edge-demos.git
+            dest: /tmp/image-definition
+        - name: load in image definition
+          ansible.builtin.include_vars:
+            file: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
   roles:
     - infra.osbuild.builder
