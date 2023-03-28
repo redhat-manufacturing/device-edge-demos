@@ -1,8 +1,8 @@
 builder_compose_customizations:
   user:
-    name: ansible
-    description: ansible
-    password: "{{ ansible_password }}"
+    name: "{{ image_username }}"
+    description: Username for image account
+    password: "{{ image_password }}"
     groups:
       - users
       - wheel
