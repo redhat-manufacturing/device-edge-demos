@@ -4,6 +4,9 @@
   hosts:
     - all
   pre_tasks:
+    - name: ensure git is present
+      ansible.builtin.dnf
+        name: git
     - name: pull code to system
       ansible.builtin.git:
         repo: https://github.com/redhat-manufacturing/device-edge-demos.git
