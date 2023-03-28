@@ -6,6 +6,7 @@
   pre_tasks:
     - name: handle locally
       delegate_to: localhost
+      become: false
       block:
         - name: pull code to system
           ansible.builtin.git:
