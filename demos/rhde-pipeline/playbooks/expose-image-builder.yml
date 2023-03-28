@@ -1,0 +1,38 @@
+---
+
+- name: expose cockpit via route
+  hosts:
+    - all
+  gather_facts: false
+  tasks:
+    - name: create service for cockpit
+      kubernetes.core.k8s:
+        definition:
+         apiVersion: v1
+         kind: Service
+         metadata:
+           name: "{{ virtual_machine_name }}-image-builder"
+           namespace: image-builder
+         spec:
+           ports:
+           - port: 9090
+             protocol: TCP
+             targetPort: 9090
+           selector:
+             kubevirt.io/domain: "{{ virtual_machine_name }}"
+           type: NodePort
+    - name: create route for cockpit
+      kubernetes.core.k8s:
+        definition:
+          kind: Route
+          apiVersion: route.openshift.io/v1
+          metadata:
+            name: cockpit-route
+            namespace: image-builder
+          spec:
+            to:
+              kind: Service
+              name: "{{ virtual_machine_name }}-image-builder"
+              weight: 100
+            port:
+              targetPort: 9090
