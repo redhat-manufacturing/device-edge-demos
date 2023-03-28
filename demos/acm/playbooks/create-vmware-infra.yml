@@ -85,10 +85,20 @@
           - size_gb: 120
             type: thin
             datastore: storage04-nfs-lun0
+          - size_gb: 120
+            type: thin
+            datastore: storage04-nfs-lun0
+          - size_gb: 120
+            type: thin
+            datastore: storage04-nfs-lun0
+          - size_gb: 120
+            type: thin
+            datastore: storage04-nfs-lun0
         hardware:
-          memory_mb: 32768
+          memory_mb: 65536
           num_cpus: 16
           scsi: paravirtual
+          nested_virt: true
         networks:
           - name: VLAN144
             mac: "{{ mac_address }}"
