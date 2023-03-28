@@ -4,4 +4,4 @@
   hosts:
    - all
   roles:
-    - infra.osbuild.builder
+    - infra.osbuild.setup_server
