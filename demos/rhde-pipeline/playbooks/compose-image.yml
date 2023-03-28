@@ -5,7 +5,7 @@
     - all
   pre_tasks:
     - name: ensure git is present
-      ansible.builtin.dnf
+      ansible.builtin.dnf:
         name: git
     - name: pull code to system
       ansible.builtin.git:
