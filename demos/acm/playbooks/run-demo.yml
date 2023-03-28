@@ -1,0 +1,20 @@
+---
+
+- name: run ACM demo
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ acm_cluster_kubeconfig_path }}"
+  pre_tasks:
+    - name: slurp up kubeconfig
+      ansible.builtin.slurp:
+        path: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+      register: kubeconfig
+      delegate_to: localhost
+  tasks:
+    - name: import the clusters to ACM
+      kubernetes.core.k8s:
+        template: templates/managed-cluster.yaml.j2
+      delegate_to: localhost
