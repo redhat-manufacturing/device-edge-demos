@@ -13,6 +13,6 @@
         dest: /tmp/image-definition
     - name: load in image definition
       ansible.builtin.include_vars:
-        path: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
+        file: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
   roles:
     - infra.osbuild.builder
