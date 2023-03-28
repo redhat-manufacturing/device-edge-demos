@@ -6,5 +6,5 @@
 - name: import playbook to create vmware-based infra
   ansible.builtin.import_playbook: create-vmware-infra.yml
 
-- name: import playbook to configure ACM and cluster
-  ansible.builtin.import_playbook: configure-acm-cluster.yml
+# - name: import playbook to configure ACM and cluster
+#   ansible.builtin.import_playbook: configure-acm-cluster.yml
