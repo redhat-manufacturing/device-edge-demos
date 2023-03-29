@@ -1,0 +1,31 @@
+---
+
+- name: configure the internal registry
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  tasks:
+    - name: run from localhost
+      delegate_to: localhost
+      block:
+        - name: make registry managed
+          ansible.builtin.shell:
+            cmd: oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed"}}'
+          args:
+            chdir: "{{ tmpdir.path }}"
+          environment:
+            KUBECONFIG: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+        - name: set storage to emptyDir
+          ansible.builtin.shell:
+            cmd: oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"emptyDir":{}}}}'
+          args:
+            chdir: "{{ tmpdir.path }}"
+          environment:
+            KUBECONFIG: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+        - name: expose the registry
+          ansible.builtin.shell:
+            cmd: oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+          args:
+            chdir: "{{ tmpdir.path }}"
+          environment:
+            KUBECONFIG: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
