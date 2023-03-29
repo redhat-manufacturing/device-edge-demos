@@ -1,0 +1,33 @@
+---
+
+- name: configure local storage
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+  tasks:
+    - name: configure storage
+      delegate_to: localhost
+      block:
+        - name: create namespace
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/namespaces/openshift-storage.yaml') | from_yaml }}"
+        - name: create operator group
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/operator-groups/openshift-storage.yaml') | from_yaml }}"
+        - name: install operator
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/operators/openshift-storage.yaml') | from_yaml }}"
+          register: operator_install
+          until:
+            - operator_install.result.status.state is defined
+            - operator_install.result.status.state == 'AtLatestKnown'
+          retries: 100
+          delay: 10
+        - name: create lvm cluster
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/instances/lvmcluster.yaml') | from_yaml }}"
+          retries: 100
+          delay: 10
