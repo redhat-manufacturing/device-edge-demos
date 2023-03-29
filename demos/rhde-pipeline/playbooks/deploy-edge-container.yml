@@ -56,7 +56,7 @@
                   image: "{{ image_registry }}/{{ ocp_namespace }}/{{ builder_blueprint_name }}:{{ image_version }}"
                   ports:
                     - containerPort: 8080
-                      name: edge-container-port
+                      name: edge-cont-port
     - name: create route for edge-container
       kubernetes.core.k8s:
         definition:
@@ -67,7 +67,7 @@
           spec:
             to:
               kind: Service
-              name: ui
+              name: edge-cont-port
               weight: 100
             port:
               targetPort: 8080
