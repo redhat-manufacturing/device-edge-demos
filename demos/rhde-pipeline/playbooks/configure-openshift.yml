@@ -1,0 +1,38 @@
+---
+
+- name: import playbook to configure the local registry
+  ansible.builtin.import_playbook: configure-registry.yml
+
+- name: import playbook to setup local storage
+  ansible.builtin.import_playbook: configure-storage.yml
+
+- name: import playbook to setup controller
+  ansible.builtin.import_playbook: install-ansible.yml
+     
+- name: import playbook to setup pipelines
+  ansible.builtin.import_playbook: configure-pipelines.yml
+
+- name: import playbook to setup virtualization
+  ansible.builtin.import_playbook: configure-virtualization.yml
+
+- name: import playbook to setup image builder virtual machine template
+  ansible.builtin.import_playbook: setup-image-builder-vm-template.yml
+
+# - name: wait for deployments to finish
+#   hosts:
+#     - sno_clusters
+#   gather_facts: false
+#   tasks:
+#     - name: wait for deployments to finish
+#       ansible.builtin.shell:
+#         cmd: oc get pods -A | grep -vi 'Running\\|Completed' | grep -v NAMESPACE | wc -l
+#       args:
+#         chdir: "{{ tmpdir.path }}"
+#       environment:
+#         KUBECONFIG: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+#       register: in_flight_pods
+#       until:
+#         - in_flight_pods.stdout | int == 0
+#       retries: 120
+#       delay: 30
+#       delegate_to: localhost
