@@ -1,0 +1,44 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: preconfigure-virtual-machine
+  namespace: image-builder
+spec:
+  params:
+    - name: virtualMachineName
+      type: string
+      description: The virtual machine being leveraged
+      default: rhel9-vm
+  steps:
+     - name: preconfigure-virtual-machine
+       image: quay.io/device-edge-workshops/helper-ee:latest
+       env:
+         - name: CONTROLLER_HOSTNAME
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_hostname
+         - name: CONTROLLER_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_username
+         - name: CONTROLLER_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_password
+         - name: CONTROLLER_VALIDATE_CERTS
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_validate_certs
+       script: |
+         ansible-playbook /helper-playbooks/run-job-template.yml \
+         --extra-vars "controller_hostname=$CONTROLLER_HOSTNAME" \
+         --extra-vars "controller_username=$CONTROLLER_USERNAME" \
+         --extra-vars "controller_password=$CONTROLLER_PASSWORD" \
+         --extra-vars "controller_validate_certs=$CONTROLLER_VALIDATE_CERTS" \
+         --extra-vars "job_template='Preconfigure Virtual Machine'" \
+         --extra-vars "virtual_machine_name=$(params.virtualMachineName)"

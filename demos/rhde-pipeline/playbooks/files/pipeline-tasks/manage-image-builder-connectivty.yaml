@@ -1,0 +1,49 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: manage-image-builder-connectivity
+  namespace: image-builder
+spec:
+  params:
+    - name: virtualMachineName
+      type: string
+      description: The name of the virtual machine running image builder
+      default: rhel9-vm
+    - name: resourceState
+      type: string
+      description: Creating or cleaning up
+      default: present
+  steps:
+     - name: manage-image-builder-connectivity
+       image: quay.io/device-edge-workshops/helper-ee:latest
+       env:
+         - name: CONTROLLER_HOSTNAME
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_hostname
+         - name: CONTROLLER_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_username
+         - name: CONTROLLER_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_password
+         - name: CONTROLLER_VALIDATE_CERTS
+           valueFrom:
+             secretKeyRef:
+               name: controller-auth-account
+               key: controller_validate_certs
+       script: |
+         ansible-playbook /helper-playbooks/run-job-template.yml \
+         --extra-vars "controller_hostname=$CONTROLLER_HOSTNAME" \
+         --extra-vars "controller_username=$CONTROLLER_USERNAME" \
+         --extra-vars "controller_password=$CONTROLLER_PASSWORD" \
+         --extra-vars "controller_validate_certs=$CONTROLLER_VALIDATE_CERTS" \
+         --extra-vars "job_template='Manage Image Builder Connectivity'" \
+         --extra-vars "virtual_machine_name=$(params.virtualMachineName)" \
+         --extra-vars "resource_state=$(params.resourceState)"

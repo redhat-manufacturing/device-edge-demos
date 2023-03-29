@@ -1,0 +1,18 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: debug
+  namespace: image-builder
+spec:
+  params:
+    - name: debug
+      type: string
+      description: The name of the virtual machine to expose
+      default: 'Hello World'
+  steps:
+    - name: debug
+      image: quay.io/device-edge-workshops/provisioner-execution-environment:latest
+      script: |
+        #!/bin/bash
+        echo $(params.debug)
