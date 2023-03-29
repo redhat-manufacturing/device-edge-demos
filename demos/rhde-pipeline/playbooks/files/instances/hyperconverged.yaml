@@ -1,0 +1,14 @@
+---
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  annotations:
+    deployOVS: 'false'
+  namespace: openshift-cnv
+spec:
+  featureGates:
+    deployTektonTaskResources: true
+    enableCommonBootImageImport: true
+    nonRoot: true
+    withHostPassthroughCPU: false
