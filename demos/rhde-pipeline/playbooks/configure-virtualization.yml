@@ -1,0 +1,36 @@
+---
+
+- name: configure openshift virtualization
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+  tasks:
+    - name: configure storage
+      delegate_to: localhost
+      block:
+        - name: create namespace
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/namespaces/openshift-cnv.yaml') | from_yaml }}"
+        - name: create operator group
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/operator-groups/openshift-cnv.yaml') | from_yaml }}"
+        - name: install operator
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/operators/openshift-virtualization.yaml') | from_yaml }}"
+          register: operator_install
+          until:
+            - operator_install.result.status.state is defined
+            - operator_install.result.status.state == 'AtLatestKnown'
+          retries: 100
+          delay: 10
+        - name: create instance of hyperconverged
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/instances/hyperconverged.yaml') | from_yaml }}"
+          register: instance_creation
+          until:
+            - not instance_creation.failed
+          retries: 30
+          delay: 30
