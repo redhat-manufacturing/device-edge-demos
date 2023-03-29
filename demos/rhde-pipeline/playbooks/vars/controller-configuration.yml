@@ -154,7 +154,7 @@ controller_projects:
     scm_type: git
     scm_url: https://github.com/redhat-manufacturing/device-edge-demos.git
 controller_templates:
-  - name: Manage Virtual Machine Connection
+  - name: Manage Virtual Machine Connectivity
     organization: Default
     inventory: Local Actions
     project: Image Builder Codebase
@@ -194,7 +194,7 @@ controller_templates:
     become_enabled: true
     credentials:
       - Machine Credentials
-  - name: Manage Image Builder Connection
+  - name: Manage Image Builder Connectivity
     organization: Default
     inventory: Local Actions
     project: Image Builder Codebase
