@@ -5,6 +5,11 @@
     - all
   gather_facts: false
   pre_tasks:
+    - name: set fact when needed
+      ansible.builtin.set_fact:
+        resource_state: present
+      when:
+        - resource_state is not defined
     - name: get service details
       kubernetes.core.k8s:
         definition:
@@ -23,6 +28,8 @@
            type: NodePort
       register: service_details
       check_mode: true
+      when:
+        - "resource_state == 'present'"
     - name: get external ip address | only works on SNO, otherwise you need the node IP
       ansible.builtin.shell:
         cmd: getent hosts "{{ k8s_api_address }}" | awk '{print $1}'
@@ -34,8 +41,9 @@
           - name: "{{ virtual_machine_name }}"
             inventory: Image Builder Servers
             enabled: true
+            state: "{{ resource_state | default('present') }}"
             variables:
-              ansible_host: "{{ external_ip.stdout }}"
-              ansible_port: "{{ service_details.result.spec.ports[0].nodePort }}"
+              ansible_host: "{{ external_ip.stdout | default('') }}"
+              ansible_port: "{{ service_details.result.spec.ports[0].nodePort | default('') }}"
   roles:
     - redhat_cop.controller_configuration.hosts

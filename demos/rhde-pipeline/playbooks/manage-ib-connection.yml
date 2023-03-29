@@ -1,9 +1,12 @@
 ---
 
-- name: expose cockpit via route
+- name: manage connection to cockpit
   hosts:
     - all
   gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      state: "{{ resource_state | default('present') }}"
   tasks:
     - name: create service for cockpit
       kubernetes.core.k8s:
