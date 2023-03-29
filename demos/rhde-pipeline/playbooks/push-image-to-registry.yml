@@ -1,0 +1,87 @@
+---
+
+- name: push edge container to OCP registry
+  hosts:
+    - all
+  pre_tasks:
+    - name: handle locally
+      delegate_to: localhost
+      become: false
+      block:
+        - name: pull code to system
+          ansible.builtin.git:
+            repo: https://github.com/redhat-manufacturing/device-edge-demos.git
+            dest: /tmp/image-definition
+          changed_when: false
+        - name: load in image definition
+          ansible.builtin.include_vars:
+            file: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
+    - name: ensure podman is present
+      ansible.builtin.dnf:
+        name: podman
+    - name: get the OCP CLI tooling
+      ansible.builtin.get_url:
+        url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+        dest: /tmp/openshift-client-linux.tar.gz
+    - name: extract cli tooling
+      ansible.builtin.unarchive:
+        src: /tmp/openshift-client-linux.tar.gz
+        dest: /tmp/
+        remote_src: true
+    - name: make oc executable
+      ansible.builtin.file:
+        path: /tmp/oc
+        mode: '0755'
+    - name: login to get token
+      ansible.builtin.shell:
+        cmd: | 
+          ./oc login \
+          --username "{{ kubeadmin_username }}" \
+          --password "{{ kubeadmin_password }}" \
+          --server "{{ k8s_api_int_address }}"
+          --insecure-skip-tls-verify
+      args:
+        chdir: /tmp/
+      changed_when: false
+      failed_when:
+        - "'Login successful' not in oc_login.stdout"
+      register: oc_login
+    - name: get auth token
+      ansible.builtin.shell:
+        cmd: ./oc whoami -t
+      args:
+        chdir: /tmp/
+      changed_when: false
+      register: oc_token
+    - name: login to registry
+      containers.podman.podman_login:
+        registry: image-registry.openshift-image-registry.svc.cluster.local:5000
+        username: "{{ kubeadmin_username }}"
+        password: "{{ oc_token.stdout }}"
+        tlsverify: false
+    - name: create imagestream
+      ansible.builtin.shell:
+        cmd: "./oc create imagestream {{ builder_blueprint_name }} -n {{ ocp_namespace }}"
+      args:
+        chdir: /tmp/
+      register: create_imagestream
+      failed_when:
+        - "'AlreadyExists' not in create_imagestream.stderr"
+        - "'created' not in create_imagestream.stdout"
+      changed_when:
+        - "'AlreadyExists' not in create_imagestream.stderr"
+  tasks:
+    - name: load in composed image
+      containers.podman.podman_load:
+        path: "/var/www/html/{{ builder_blueprint_name }}/images/{{ builder_blueprint_name }}_edge-container.tar"
+      register: loaded_image
+    - name: tag image
+      containers.podman.podman_tag:
+        image: "{{ loaded_image.image.Id }}"
+        target_names:
+          - "{{ image_registry }}/{{ ocp_namespace }}/{{ builder_blueprint_name }}:{{ image_version }}"
+    - name: push image to OCP registry
+      containers.podman.podman_image:
+        name: "{{ image_registry }}/{{ ocp_namespace }}/{{ builder_blueprint_name }}:{{ image_version }}"
+        push: yes
+        validate_certs: false
