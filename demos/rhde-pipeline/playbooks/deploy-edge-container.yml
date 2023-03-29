@@ -1,0 +1,73 @@
+---
+
+- name: deploy composed edge-container
+  hosts:
+    - all
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      namespace: "{{ ocp_namespace }}"
+  pre_tasks:
+    - name: setup tasks
+      block:
+        - name: pull code to system
+          ansible.builtin.git:
+            repo: https://github.com/redhat-manufacturing/device-edge-demos.git
+            dest: /tmp/image-definition
+          changed_when: false
+        - name: load in image definition
+          ansible.builtin.include_vars:
+            file: /tmp/image-definition/demos/rhde-pipeline/device-edge-images/image-definition.yml
+  tasks:
+    - name: create service for edge-container
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: edge-container-service
+          spec:
+            ports:
+            - port: 8080
+              protocol: TCP
+              targetPort: 8080
+            selector:
+              app: edge-container
+            type: NodePort
+    - name: create deployment for edge-container
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: edge-container
+          spec:
+            selector:
+              matchLabels:
+                app: edge-container
+            replicas: 1
+            template:
+              metadata:
+                labels:
+                  app: edge-container
+              spec:
+                containers:
+                - name: edge-container
+                  image: "{{ image_registry }}/{{ ocp_namespace }}/{{ builder_blueprint_name }}:{{ image_version }}"
+                  ports:
+                    - containerPort: 8080
+                      name: edge-container-port
+    - name: create route for edge-container
+      kubernetes.core.k8s:
+        definition:
+          kind: Route
+          apiVersion: route.openshift.io/v1
+          metadata:
+            name: edge-container-route
+          spec:
+            to:
+              kind: Service
+              name: ui
+              weight: 100
+            port:
+              targetPort: 8080
