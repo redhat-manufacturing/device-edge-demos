@@ -15,3 +15,5 @@ builder_compose_pkgs:
   - nano
   - NetworkManager-wifi
   - ansible-core
+
+image_version: 1.0.0
