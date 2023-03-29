@@ -1,0 +1,236 @@
+---
+
+controller_username: admin
+controller_validate_certs: false
+controller_configuration_credentials_secure_logging: false
+
+controller_credential_types:
+  - name: Openshift Kubeconfig
+    kind: cloud
+    inputs:
+      fields:
+        - id: kubeconfig
+          type: string
+          label: Kubeconfig
+          #secret: true
+          multiline: true
+    injectors:
+      env:
+        K8S_AUTH_KUBECONFIG: "{  { tower.filename.kubeconfig }}"
+        KUBECONFIG: "{  { tower.filename.kubeconfig }}"
+      file:
+        template.kubeconfig: "{  { kubeconfig }}"
+  - name: RHSM Credentials
+    kind: cloud
+    inputs:
+      fields:
+        - id: rhsm_username
+          type: string
+          label: RHSM Hostname
+        - id: rhsm_password
+          type: string
+          label: RHSM Username
+          secret: true
+    injectors:
+      extra_vars:
+        rhsm_username: "{  { rhsm_username }}"
+        rhsm_password: "{  { rhsm_password }}"
+  - name: Image Credentials
+    kind: cloud
+    inputs:
+      fields:
+        - id: image_username
+          type: string
+          label: Image Hostname
+        - id: image_password
+          type: string
+          label: Image Username
+          secret: true
+    injectors:
+      extra_vars:
+        image_username: "{  { image_username }}"
+        image_password: "{  { image_password }}"
+  - name: Ansible Controller API Credentials
+    kind: cloud
+    inputs:
+      fields:
+        - id: controller_hostname
+          type: string
+          label: Controller Hostname
+        - id: controller_username
+          type: string
+          label: Controller Username
+        - id: controller_password
+          type: string
+          label: Controller Password
+          secret: yes
+    injectors:
+      extra_vars:
+        controller_hostname: "{  { controller_hostname }}"
+        controller_username: "{  { controller_username }}"
+        controller_password: "{  { controller_password }}"
+        controller_validate_certs: "no"
+  - name: Kubeadmin Credentials
+    kind: cloud
+    inputs:
+      fields:
+        - id: kubeadmin_username
+          type: string
+          label: Kubeadmin username
+        - id: kubeadmin_password
+          type: string
+          label: Kubeadmin password
+          secret: true
+    injectors:
+      extra_vars:
+        kubeadmin_username: "{  { kubeadmin_username }}"
+        kubeadmin_password: "{  { kubeadmin_password }}"
+controller_credentials:
+  - name: kubeconfig
+    organization: Default
+    credential_type: Openshift Kubeconfig
+    inputs:
+      kubeconfig: "{{ lookup('file', (tmpdir.path + '/ocp/auth/kubeconfig')) | from_yaml | string }}"
+  - name: Machine Credentials
+    organization: Default
+    credential_type: Machine
+    inputs:
+      username: cloud-user
+      password: "{{ vm_template_password }}"
+      become_password: "{{ vm_template_password }}"
+  - name: Ansible Controller API Credentials
+    credential_type: Ansible Controller API Credentials
+    organization: Default
+    inputs:
+      controller_hostname: "{{ controller_hostname }}"
+      controller_username: admin
+      controller_password: "{{ controller_password }}"
+  - name: RHSM Credentials
+    credential_type: RHSM Credentials
+    organization: Default
+    inputs:
+      rhsm_username: "{{ rhsm_username }}"
+      rhsm_password: "{{ rhsm_password }}"
+  - name: Image Credentials
+    credential_type: Image Credentials
+    organization: Default
+    inputs:
+      image_username: "{{ image_username }}"
+      image_password: "{{ image_password }}"
+  - name: Kubeadmin Credentials
+    credential_type: Kubeadmin Credentials
+    organization: Default
+    inputs:
+      kubeadmin_username: kubeadmin
+      kubeadmin_password: "{{ lookup('file', (tmpdir.path + '/ocp/auth/kubeadmin-password')) }}"
+controller_execution_environments:
+  - name: Image Builder Execution Environment
+    image: quay.io/device-edge-workshops/helper-ee:latest
+    pull: always
+controller_inventories:
+  - name: Image Builder Servers
+    organization: Default
+    variables:
+      k8s_api_address: "api.{{ inventory_hostname }}"
+      k8s_api_int_address: "api-int.{{ inventory_hostname }}:6443"
+      ocp_namespace: image-builder
+      image_registry: 'image-registry.openshift-image-registry.svc.cluster.local:5000'
+  - name: Local Actions
+    organization: Default
+    variables:
+      k8s_api_address: "api.{{ inventory_hostname }}"
+      k8s_api_int_address: "api-int.{{ inventory_hostname }}:6443"
+      ocp_namespace: image-builder
+      image_registry: 'image-registry.openshift-image-registry.svc.cluster.local:5000'
+controller_hosts:
+  - name: localhost
+    inventory: Local Actions
+    variables:
+      ansible_connection: local
+      ansible_python_interpreter: "{  { ansible_playbook_python }}"
+controller_projects:
+  - name: Image Builder Codebase
+    organization: Default
+    scm_type: git
+    scm_url: https://github.com/redhat-manufacturing/device-edge-demos.git
+controller_templates:
+  - name: Manage Virtual Machine Connection
+    organization: Default
+    inventory: Local Actions
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/manage-vm-connection.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    credentials:
+      - kubeconfig
+  - name: Manage Host in Controller
+    organization: Default
+    inventory: Local Actions
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/manage-host-in-controller.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    credentials:
+      - kubeconfig
+      - Ansible Controller API Credentials
+  - name: Preconfigure Virtual Machine
+    organization: Default
+    inventory: Image Builder Servers
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/preconfigure-virtual-machine.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    become_enabled: true
+    credentials:
+      - Machine Credentials
+      - RHSM Credentials
+  - name: Install Image Builder
+    organization: Default
+    inventory: Image Builder Servers
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/install-image-builder.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    become_enabled: true
+    credentials:
+      - Machine Credentials
+  - name: Manage Image Builder Connection
+    organization: Default
+    inventory: Local Actions
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/manage-ib-connection.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    credentials:
+      - kubeconfig
+  - name: Compose Image
+    organization: Default
+    inventory: Image Builder Servers
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/compose-image.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    become_enabled: true
+    credentials:
+      - Machine Credentials
+      - Image Credentials
+  - name: Push Image to Registry
+    organization: Default
+    inventory: Image Builder Servers
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/push-image-to-registry.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    become_enabled: true
+    credentials:
+      - Machine Credentials
+      - Kubeadmin Credentials
+  - name: Deploy Edge Container
+    organization: Default
+    inventory: Local Actions
+    project: Image Builder Codebase
+    playbook: demos/rhde-pipeline/playbooks/deploy-edge-container.yml
+    execution_environment: Image Builder Execution Environment
+    ask_variables_on_launch: true
+    credentials:
+      - kubeconfig
