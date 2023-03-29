@@ -1,0 +1,22 @@
+---
+
+- name: configure openshift pipelines
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+  tasks:
+    - name: configure storage
+      delegate_to: localhost
+      block:
+        - name: install operator
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/operators/openshift-pipelines.yaml') | from_yaml }}"
+          register: operator_install
+          until:
+            - operator_install.result.status.state is defined
+            - operator_install.result.status.state == 'AtLatestKnown'
+          retries: 100
+          delay: 10
