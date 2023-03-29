@@ -63,11 +63,11 @@
           kind: Route
           apiVersion: route.openshift.io/v1
           metadata:
-            name: edge-container-route
+            name: edge-container
           spec:
             to:
               kind: Service
-              name: edge-cont-port
+              name: edge-container-service
               weight: 100
             port:
               targetPort: 8080
