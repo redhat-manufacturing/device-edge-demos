@@ -20,5 +20,6 @@
             timeout: 14400
             extra_vars:
               virtual_machine_name: "{{ virtual_machine_name | default('rhel9-vm') }}"
+              resource_state: "{{ resource_state | default('present') }}"
   roles:
     - redhat_cop.controller_configuration.job_launch
