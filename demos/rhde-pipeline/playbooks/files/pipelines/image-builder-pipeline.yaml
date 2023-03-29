@@ -1,0 +1,131 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-and-host-device-edge-image
+  namespace: image-builder
+spec:
+  tasks:
+    - name: create-vm-from-template
+      params:
+        - name: templateName
+          value: rhel9-image-builder-template
+        - name: runStrategy
+          value: RerunOnFailure
+        - name: startVM
+          value: 'true'
+      taskRef:
+        kind: ClusterTask
+        name: create-vm-from-template
+    - name: expose-virtual-machine-ssh
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - create-vm-from-template
+      taskRef:
+        kind: Task
+        name: manage-virtual-machine-connectivity
+    - name: create-host-in-controller
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - expose-virtual-machine-ssh
+      taskRef:
+        kind: Task
+        name: manage-host-in-controller
+    - name: preconfigure-virtual-machine
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - create-host-in-controller
+      taskRef:
+        kind: Task
+        name: preconfigure-virtual-machine
+    - name: install-image-builder
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - preconfigure-virtual-machine
+      taskRef:
+        kind: Task
+        name: install-image-builder
+    - name: expose-image-builder
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - install-image-builder
+      taskRef:
+        kind: Task
+        name: manage-image-builder-connectivity
+    - name: compose-image
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - install-image-builder
+        - expose-image-builder
+      taskRef:
+        kind: Task
+        name: compose-image
+    - name: push-image-to-registry
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - compose-image
+      taskRef:
+        kind: Task
+        name: push-image-to-registry
+    - name: deploy-composed-image
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+      runAfter:
+        - push-image-to-registry
+      taskRef:
+        kind: Task
+        name: push-image-to-registry
+  finally:
+    - name: cleanup-virtual-machine
+      params:
+        - name: vmName
+          value: $(tasks.create-vm-from-template.results.name)
+        - name: stop
+          value: 'true'
+        - name: delete
+          value: 'true'
+      taskRef:
+        kind: ClusterTask
+        name: cleanup-vm
+    - name: cleanup-vm-connectivity
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+        - name: resourceState
+          value: absent
+      taskRef:
+        kind: Task
+        name: manage-virtual-machine-connectivity
+    - name: cleanup-image-builder-connectivity
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+        - name: resourceState
+          value: absent
+      taskRef:
+        kind: Task
+        name: manage-image-builder-connectivity
+    - name: cleanup-host-in-controller
+      params:
+        - name: virtualMachineName
+          value: $(tasks.create-vm-from-template.results.name)
+        - name: resourceState
+          value: absent
+      taskRef:
+        kind: Task
+        name: manage-host-in-controller
