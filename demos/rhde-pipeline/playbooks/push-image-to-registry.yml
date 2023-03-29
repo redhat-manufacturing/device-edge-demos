@@ -35,11 +35,7 @@
     - name: login to get token
       ansible.builtin.shell:
         cmd: | 
-          ./oc login \
-          --username "{{ kubeadmin_username }}" \
-          --password "{{ kubeadmin_password }}" \
-          --server "{{ k8s_api_int_address }}"
-          --insecure-skip-tls-verify
+          ./oc login --username "{{ kubeadmin_username }}" --password "{{ kubeadmin_password }}" --server "{{ k8s_api_int_address }}" --insecure-skip-tls-verify
       args:
         chdir: /tmp/
       changed_when: false
