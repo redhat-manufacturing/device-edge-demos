@@ -1,0 +1,19 @@
+---
+
+- name: setup image builder virtual machine
+  hosts:
+    - sno_clusters
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s:
+      kubeconfig: "{{ tmpdir.path }}/ocp/auth/kubeconfig"
+  tasks:
+    - name: configure storage
+      delegate_to: localhost
+      block:
+        - name: create namespace
+          kubernetes.core.k8s:
+            definition: "{{ lookup('file', 'files/namespaces/image-builder.yaml') | from_yaml }}"        
+        - name: create virtual machine template
+          kubernetes.core.k8s:
+            template: files/virtual-machine-templates/rhel9-image-builder.yaml.j2
