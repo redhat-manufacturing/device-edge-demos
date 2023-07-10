@@ -4,8 +4,6 @@
   hosts:
     - sno_clusters
   gather_facts: false
-  vars:
-    ocp_version: 4.12.6
   tasks:
     - name: tooling is local
       block:
