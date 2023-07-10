@@ -16,7 +16,7 @@
   ansible.builtin.import_playbook: configure-virtualization.yml
 
 - name: import playbook to setup image builder virtual machine template
-  ansible.builtin.import_playbook: setup-image-builder-vm-template.yml
+  ansible.builtin.import_playbook: setup-image-builder-template.yml
 
 # - name: wait for deployments to finish
 #   hosts:
