@@ -1,5 +1,4 @@
 .venv
-demos/acm
 inventory.yml
 tmp-inventory.yml
 tmp.yaml
