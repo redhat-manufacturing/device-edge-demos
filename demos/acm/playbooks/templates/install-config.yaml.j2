@@ -1,5 +1,11 @@
 apiVersion: v1
-baseDomain: lab.msp.redhat.com
+baseDomain: {{ base_domain }}
+{% if proxy is defined %}
+proxy:
+  httpProxy: {{ proxy.http }}
+  httpsProxy: {{ proxy.https }}
+  noProxy: {{ proxy.no_proxy }}
+{% endif %}
 compute:
 - name: worker
   replicas: 0 
@@ -14,13 +20,13 @@ networking:
   - cidr: 10.128.0.0/14
     hostPrefix: 23
   machineNetwork:
-  - cidr: 10.15.108.0/24
+  - cidr: {{ machine_network }}
   serviceNetwork:
   - 172.30.0.0/16 
 platform:
   none: {}
 bootstrapInPlace:
-  installationDisk: /dev/sda 
-pullSecret: '{{ pull_secret }}' 
+  installationDisk: {{ installation_disk | default('/dev/sda') }}
+pullSecret: '{{ pull_secret }}'
 sshKey: |
   {{ ssh_key }}
