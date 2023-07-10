@@ -68,7 +68,6 @@ spec:
           value: $(tasks.create-vm-from-template.results.name)
       runAfter:
         - install-image-builder
-        - expose-image-builder
       taskRef:
         kind: Task
         name: compose-image
