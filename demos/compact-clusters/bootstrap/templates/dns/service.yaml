@@ -1,0 +1,13 @@
+---
+# Not done yet
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-service
+spec:
+  selector:
+    app.kubernetes.io/name: dns
+  ports:
+    - protocol: UDP
+      port: 53
+      targetPort: 53

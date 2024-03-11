@@ -1,0 +1,60 @@
+---
+
+microshift: true
+
+forwardZone: example.dns.com
+reverseZone: 0.16.172.in-addr.arpa
+
+internalAddress: 192.168.0.1
+
+dnsForwarders:
+  - 1.1.1.1
+  - 1.0.0.1
+  - 8.8.8.8
+  - 8.8.4.4
+
+forwardRecords:
+  - record: dns
+    type: A
+    value: 192.168.0.1
+  - record: api
+    type: A
+    value: 192.168.0.20
+  - record: api-int
+    type: A
+    value: 192.168.0.20
+  - record: '*.apps'
+    type: A
+    value: 192.168.0.21
+  - record: acp-node-0
+    type: A
+    value: 192.168.0.10
+  - record: acp-node-1
+    type: A
+    value: 192.168.0.11
+  - record: acp-node-2
+    type: A
+    value: 192.168.0.12
+  - record: dns-0
+    type: A
+    value: 192.168.0.5
+  - record: dns-1
+    type: A
+    value: 192.168.0.6
+
+reverseRecords:
+  - record: 10
+    type: PTR
+    value: acp-node-0
+  - record: 11
+    type: PTR
+    value: acp-node-1
+  - record: 12
+    type: PTR
+    value: acp-node-2
+
+dnsConfigs:
+  - named.conf
+  - files.zones
+  - forward.zone
+  - reverse.zone

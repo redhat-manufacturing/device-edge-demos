@@ -1,0 +1,54 @@
+{{ if .Values.microshift }}
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: bootstrap-scc
+  annotations:
+    kubernetes.io/description: 'Clone of privileged scc, use with caution.'
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- '*'
+allowedUnsafeSysctls:
+- '*'
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+priority: null
+readOnlyRootFilesystem: false
+requiredDropCapabilities: null
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:admin
+- system:serviceaccount:bootstrap:bootstrap-service-account
+{{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: system:openshift:scc:privileged
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+{{ if .Values.microshift }}
+  name: system:openshift:scc:bootstrap-scc
+{{ else }}
+  name: system:openshift:scc:privileged
+{{ end }}
+subjects:
+- kind: ServiceAccount
+  name: bootstrap-service-account
+  namespace: bootstrap
