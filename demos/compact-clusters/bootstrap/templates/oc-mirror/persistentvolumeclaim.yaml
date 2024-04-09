@@ -13,7 +13,9 @@ spec:
   resources:
     requests:
       storage: 50Gi
-  storageClassName: lvms-vg1
+  {{ if .Values.ocMirror.storageClass }}
+  storageClassName: {{ .Values.ocMirror.storageClass }}
+  {{ end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -28,5 +30,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
-  storageClassName: lvms-vg1
+      storage: 20Gi
+  {{ if .Values.ocMirror.storageClass }}
+  storageClassName: {{ .Values.ocMirror.storageClass }}
+  {{ end }}
