@@ -5,3 +5,5 @@ tmp.yaml
 password
 *tmp*
 *.backup
+blog-posts
+*-values.yaml
