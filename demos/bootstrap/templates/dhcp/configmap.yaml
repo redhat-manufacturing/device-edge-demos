@@ -18,3 +18,6 @@ data:
     {{ end }}
     dhcp-no-override
     port=10053
+    {{ if .Values.dhcp.interface }}
+    interface={{ .Values.dhcp.interface }}
+    {{ end }}
