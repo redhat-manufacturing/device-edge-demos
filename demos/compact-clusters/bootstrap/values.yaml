@@ -1,60 +1,50 @@
 ---
 
+# If deploying to Microshift, set these values.
+# If deploying to OpenShift, delete/unset.
 microshift: true
+microshiftConfig:
+  ipAddresses:
+    - 192.168.0.1
 
-forwardZone: example.dns.com
-reverseZone: 0.16.172.in-addr.arpa
+dhcp:
+  interface: enp7s0
+  rangeStart: 192.168.0.10
+  rangeEnd: 192.168.0.250
+  router: 192.168.0.1
+  dnsServer: 192.168.0.1
 
-internalAddress: 192.168.0.1
+dns:
+  forwardZone: example.domain.lcl
+  reverseZone: 0.168.192.in-addr.arpa
+  forwarders:
+    - 1.1.1.1
+    - 1.0.0.1
+    - 8.8.8.8
+    - 8.8.4.4
+  forwardRecords:
+    - record: rcd1
+      type: A
+      value: 192.168.0.20
+    - record: rcd2
+      type: A
+      value: 192.168.0.21
+  reverseRecords:
+    - record: 20
+      type: PTR
+      value: rcd1
+    - record: 21
+      type: PTR
+      value: rcd2
 
-dnsForwarders:
-  - 1.1.1.1
-  - 1.0.0.1
-  - 8.8.8.8
-  - 8.8.4.4
+ocMirror:
+  pullSecret: 'your-pull-secret-base64'
+  platformChannels:
+    - name: stable-4.15
+      type: ocp
+  additionalImages:
+    - name: registry.redhat.io/ubi9/ubi:latest
+    - name: registry.redhat.io/ubi8/ubi:latest
+    - name: registry.access.redhat.com/ubi9-minimal:latest
+    - name: registry.access.redhat.com/ubi8-minimal:latest
 
-forwardRecords:
-  - record: dns
-    type: A
-    value: 192.168.0.1
-  - record: api
-    type: A
-    value: 192.168.0.20
-  - record: api-int
-    type: A
-    value: 192.168.0.20
-  - record: '*.apps'
-    type: A
-    value: 192.168.0.21
-  - record: acp-node-0
-    type: A
-    value: 192.168.0.10
-  - record: acp-node-1
-    type: A
-    value: 192.168.0.11
-  - record: acp-node-2
-    type: A
-    value: 192.168.0.12
-  - record: dns-0
-    type: A
-    value: 192.168.0.5
-  - record: dns-1
-    type: A
-    value: 192.168.0.6
-
-reverseRecords:
-  - record: 10
-    type: PTR
-    value: acp-node-0
-  - record: 11
-    type: PTR
-    value: acp-node-1
-  - record: 12
-    type: PTR
-    value: acp-node-2
-
-dnsConfigs:
-  - named.conf
-  - files.zones
-  - forward.zone
-  - reverse.zone
