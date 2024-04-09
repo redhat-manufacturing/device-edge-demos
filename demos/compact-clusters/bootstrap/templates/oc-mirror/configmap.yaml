@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: run-oc-mirror-cf
+data: 
+  imagesetconfiguration.yaml: |
+    ---
+    kind: ImageSetConfiguration
+    apiVersion: mirror.openshift.io/v1alpha2
+    archiveSize: {{ .Values.ocMirror.archiveSide | default "4" }}
+    storageConfig:
+      registry:
+        imageURL: registry.{{ .Release.Namespace }}.svc.cluster.local:5000/mirror/oc-mirror-metadata
+        skipTLS: true
+    mirror:
+    {{ if .Values.ocMirror.platformChannels }}
+      platform:
+        graph: {{ .Values.ocMirror.graph | default "true" }}
+        channels:
+          {{- range .Values.ocMirror.platformChannels }}
+          - name: {{ .name }}
+            type: {{ .type }}
+          {{- end }}
+    {{ end }}
+    {{ if .Values.ocMirror.operators }}
+      operators:
+      {{- range .Values.ocMirror.operators }}
+        - catalog: {{ .catalog }}
+          packages:
+          {{- range .packages }}
+            - name: {{ .name }}
+              channels:
+                {{- range .channels }}
+                - name: {{ .name }}
+                {{- end }}
+          {{- end }}      
+      {{- end }}
+    {{ end }}
+    {{ if .Values.ocMirror.additionalImages }}
+      additionalImages:
+      {{- range .Values.ocMirror.additionalImages }}
+        - name: {{ .name }}
+      {{- end }}
+    {{ end }}

@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-{{ .Release.Name }}-pvc
+  labels:
+    app.kubernetes.io/name: registry-{{ .Release.Name }}-pvc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: lvms-vg1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oc-mirror-scratch-{{ .Release.Name }}-pvc
+  labels:
+    app.kubernetes.io/name: oc-mirror-scratch-{{ .Release.Name }}-pvc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: lvms-vg1

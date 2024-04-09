@@ -1,0 +1,12 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: registry-route-{{ .Release.Name }}
+spec:
+  host: registry-{{ .Release.Name }}
+  port:
+    targetPort: 5000
+  to:
+    kind: Service
+    name: registry-service-{{ .Release.Name }}
