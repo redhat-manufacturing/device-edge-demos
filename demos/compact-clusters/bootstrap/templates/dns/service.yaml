@@ -1,5 +1,4 @@
 ---
-# Not done yet
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,6 +6,7 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: dns
+  type: LoadBalancer
   ports:
     - protocol: UDP
       port: 53

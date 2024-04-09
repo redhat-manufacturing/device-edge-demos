@@ -6,13 +6,17 @@ metadata:
 data: 
   named.conf: |
     options {
+            {{ if .Values.microshift }}
+            listen-on port 53 { {{ .Values.microshiftConfig.ipAddresses | join "; " }}; };
+            {{ else }}
             listen-on port 53 { 0.0.0.0; };
+            {{ end }}
             directory "/var/named";
             recursion yes;
             allow-query { any; };
             allow-recursion { any; };
             forwarders {
-            {{- range .Values.dnsForwarders }}
+            {{- range .Values.dns.forwarders }}
                     {{ . }};
             {{- end }}
             };
@@ -20,41 +24,45 @@ data:
     include "/etc/bind/files.zones";
   files.zones: |
     // forward
-    zone "{{ .Values.forwardZone }}" IN {
+    zone "{{ .Values.dns.forwardZone }}" IN {
             type master;
             file "/etc/named/forward.zone";
             allow-update { none; };
     };
 
     // reverse
-    zone "{{ .Values.reverseZone }}" IN {
+    zone "{{ .Values.dns.reverseZone }}" IN {
             type master;
             file "/etc/named/reverse.zone";
     };
   forward.zone: |
     $TTL    86400
-    @	 IN	SOA	dns.{{ .Values.forwardZone }}. admin.{{ .Values.forwardZone }}. (
+    @	 IN	SOA	dns.{{ .Values.dns.forwardZone }}. admin.{{ .Values.dns.forwardZone }}. (
                                   3         ; Serial
                             604800         ; Refresh
                               86400         ; Retry
                             2419200         ; Expire
                             604800 );       ; Negative Cache TTL
     ;
-                IN NS   dns.{{ .Values.forwardZone }}.
-    {{- range .Values.forwardRecords }}
+                IN NS   dns.{{ .Values.dns.forwardZone }}.
+    {{ if .Values.dns.forwardRecords }}
+    {{- range .Values.dns.forwardRecords }}
     {{ .record }} IN {{ .type }} {{ .value }}
     {{- end }}
+    {{ end }}
   reverse.zone: |
     $TTL    86400
-    @	IN	SOA	dns.{{ .Values.forwardZone }}. root.{{ .Values.forwardZone }}. (
+    @	IN	SOA	dns.{{ .Values.dns.forwardZone }}. root.{{ .Values.dns.forwardZone }}. (
         1997022700        ; serial
         28800             ; refresh
         14400             ; retry
         3600000           ; expire
         86400             ; minimum
     )
-          IN	    NS      dns.{{ .Values.forwardZone }}.
+          IN	    NS      dns.{{ .Values.dns.forwardZone }}.
     ;
-    {{- range .Values.reverseRecords }}
-    {{ .record }}     IN      {{ .type }}     {{ .value }}.{{ $.Values.forwardZone }}.
+    {{ if .Values.dns.reverseRecords }}
+    {{- range .Values.dns.reverseRecords }}
+    {{ .record }}     IN      {{ .type }}     {{ .value }}.{{ $.Values.dns.forwardZone }}.
     {{- end }}
+    {{ end }}
