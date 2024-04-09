@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dhcp-ss-{{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: dhcp-ss-{{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: dhcp
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dhcp-{{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/part-of: bootstrap
+  serviceName: dhcp-service
+  replicas: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dhcp-{{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: bootstrap
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: bootstrap-service-account
+      hostNetwork: true
+      containers:
+        - name: dhcp
+          image: quay.io/jswanson/dhcp:1.0.0
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 67
+              name: dhcp-port
+          volumeMounts:
+            - name: dhcp-config
+              mountPath: /etc/dnsmasq.conf
+              subPath: dnsmasq.conf
+      volumes:
+        - name: dhcp-config
+          configMap:
+            name: dhcp-configmap
