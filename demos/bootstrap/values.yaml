@@ -1,0 +1,50 @@
+---
+
+# If deploying to Microshift, set these values.
+# If deploying to OpenShift, delete/unset.
+microshift: true
+microshiftConfig:
+  ipAddresses:
+    - 192.168.0.1 # Match to the LAN interface Address
+
+dhcp:
+  interface: enp7s0 # Interface name of LAN address
+  rangeStart: 192.168.0.10 # Ensure this is in the subnet assigned to the LAN address
+  rangeEnd: 192.168.0.250 # Ensure this is in the subnet assigned to the LAN address
+  router: 192.168.0.1 # Should match the LAN address
+  dnsServer: 192.168.0.1 # Should match the LAN address
+
+dns:
+  forwardZone: example.domain.lcl
+  reverseZone: 0.168.192.in-addr.arpa
+  forwarders:
+    - 1.1.1.1
+    - 1.0.0.1
+    - 8.8.8.8
+    - 8.8.4.4
+  forwardRecords:
+    - record: rcd1
+      type: A
+      value: 192.168.0.20
+    - record: rcd2
+      type: A
+      value: 192.168.0.21
+  reverseRecords:
+    - record: 20
+      type: PTR
+      value: rcd1
+    - record: 21
+      type: PTR
+      value: rcd2
+
+ocMirror:
+  pullSecret: 'your-pull-secret-base64'
+  platformChannels:
+    - name: stable-4.15
+      type: ocp
+  additionalImages:
+    - name: registry.redhat.io/ubi9/ubi:latest
+    - name: registry.redhat.io/ubi8/ubi:latest
+    - name: registry.access.redhat.com/ubi9-minimal:latest
+    - name: registry.access.redhat.com/ubi8-minimal:latest
+
