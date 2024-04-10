@@ -48,3 +48,12 @@ ocMirror:
     - name: registry.access.redhat.com/ubi9-minimal:latest
     - name: registry.access.redhat.com/ubi8-minimal:latest
 
+dnfMirror:
+  rhsm:
+    username: your-rhsm-username
+    password: your-rhsm-password
+  repos:
+    - name: baseos
+      id: rhel-9-for-x86_64-baseos-rpms
+    - name: appstream
+      id: rhel-9-for-x86_64-appstream-rpms
