@@ -13,8 +13,8 @@ spec:
   resources:
     requests:
       storage: 50Gi
-  {{ if .Values.ocMirror.storageClass }}
-  storageClassName: {{ .Values.ocMirror.storageClass }}
+  {{ if .Values.storageClass }}
+  storageClassName: {{ .Values.storageClass }}
   {{ end }}
 ---
 apiVersion: v1
@@ -31,6 +31,6 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  {{ if .Values.ocMirror.storageClass }}
-  storageClassName: {{ .Values.ocMirror.storageClass }}
+  {{ if .Values.storageClass }}
+  storageClassName: {{ .Values.storageClass }}
   {{ end }}
