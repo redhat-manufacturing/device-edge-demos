@@ -1,0 +1,18 @@
+{{- range .Values.dnfMirror.repos }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-repo-service
+  labels:
+    app.kubernetes.io/name: {{ .name }}-repo-service-{{ $.Release.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  selector:
+    app.kubernetes.io/name: {{ .name }}-repo-{{ $.Release.Name }}
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+{{- end }}

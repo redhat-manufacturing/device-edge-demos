@@ -1,0 +1,65 @@
+{{- range .Values.dnfMirror.repos }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}-repo-ss-{{ $.Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .name }}-repo-ss-{{ $.Release.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: {{ .name }}-repo
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .name }}-repo-{{ $.Release.Name }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/part-of: bootstrap
+  serviceName: {{ .name }}-repo-service
+  replicas: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .name }}-repo-{{ $.Release.Name }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/part-of: bootstrap
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: bootstrap-service-account
+      containers:
+        - name: {{ .name }}-repo
+          image: registry.redhat.io/rhel9/httpd-24:latest
+          ports:
+            - containerPort: 8080
+              name: port-8080
+          volumeMounts:
+            - name: {{ .name }}-repo-data
+              mountPath: /var/www/html
+      initContainers:
+        - name: sync-repo-{{ .name }}
+          image: quay.io/jswanson/dnf-mirror:1.0.1
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: {{ .name }}-repo-data
+              mountPath: /workdir
+          env:
+            - name: REPO
+              value: {{ .id }}
+            - name: RHSM_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rhsm-credentials-secret
+                  key: rhsm_username
+            - name: RHSM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rhsm-credentials-secret
+                  key: rhsm_password
+      volumes:
+        - name: {{ .name }}-repo-data
+          persistentVolumeClaim:
+            claimName: {{ .name }}-repo-{{ $.Release.Name }}-pvc
+{{- end }}

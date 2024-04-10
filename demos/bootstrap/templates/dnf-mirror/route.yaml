@@ -1,0 +1,21 @@
+{{- range .Values.dnfMirror.repos }}
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: {{ .name }}-repo
+  labels:
+    app.kubernetes.io/name: {{ .name }}-repo-{{ $.Release.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/part-of: bootstrap
+  annotations:
+    haproxy.router.openshift.io/rewrite-target: /{{ .id }}
+spec:
+  to:
+    kind: Service
+    name: {{ .name }}-repo-service
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+{{- end }}

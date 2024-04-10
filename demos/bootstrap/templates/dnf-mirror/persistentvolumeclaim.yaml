@@ -1,0 +1,20 @@
+{{- range .Values.dnfMirror.repos }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .name }}-repo-{{ $.Release.Name }}-pvc
+  labels:
+    app.kubernetes.io/name: {{ .name }}-repo-{{ $.Release.Name }}-pvc
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/part-of: bootstrap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 15Gi
+  {{ if $.Values.storageClass }}
+  storageClassName: {{ $.Values.storageClass }}
+  {{ end }}
+{{- end }}
